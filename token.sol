@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
@@ -11,12 +10,26 @@ abstract contract Context {
 interface IERC20 {
     function totalSupply() external view returns (uint256);
     function balanceOf(address account) external view returns (uint256);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
     function approve(address spender, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
     event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
 
 library SafeMath {
@@ -30,7 +43,11 @@ library SafeMath {
         return sub(a, b, "SafeMath: subtraction overflow");
     }
 
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b <= a, errorMessage);
         uint256 c = a - b;
         return c;
@@ -49,18 +66,24 @@ library SafeMath {
         return div(a, b, "SafeMath: division by zero");
     }
 
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b > 0, errorMessage);
         uint256 c = a / b;
         return c;
     }
-
 }
 
 abstract contract Ownable is Context {
     address private _owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
@@ -107,7 +130,10 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        require(
+            newOwner != address(0),
+            "Ownable: new owner is the zero address"
+        );
         _transferOwnership(newOwner);
     }
 
@@ -123,7 +149,10 @@ abstract contract Ownable is Context {
 }
 
 interface IUniswapV2Factory {
-    function createPair(address tokenA, address tokenB) external returns (address pair);
+    function createPair(
+        address tokenA,
+        address tokenB
+    ) external returns (address pair);
 }
 
 interface IUniswapV2Router02 {
@@ -143,34 +172,36 @@ interface IUniswapV2Router02 {
         uint amountETHMin,
         address to,
         uint deadline
-    ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
+    )
+        external
+        payable
+        returns (uint amountToken, uint amountETH, uint liquidity);
 }
 
-contract  Pokai is Context, IERC20, Ownable {
+contract Pokai is Context, IERC20, Ownable {
     using SafeMath for uint256;
 
-    mapping (address => uint256) private _balances;
-    mapping (address => mapping (address => uint256)) private _allowances;
-    mapping (address => bool) public _isExcludedFromFee;
-   
+    mapping(address => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => bool) public _isExcludedFromFee;
+
     uint8 private constant _decimals = 18;
-    uint256 private constant _tTotal = 1000000000 * 10**_decimals;
+    uint256 private constant _tTotal = 1000000000 * 10 ** _decimals;
     string private constant _name = unicode"pokai";
     string private constant _symbol = unicode"pokai";
-    uint256 public maxTokensPerWallet = 2000000 * 10 ** decimals();
-    uint256 public _taxSwapThreshold= 100000 * 10**_decimals;
-    
+    uint256 public _taxSwapThreshold = 100000 * 10 ** _decimals;
+
     uint256 public _pokaiBuy = 4;
     uint256 public _pokaiSell = 4;
-    address payable public _pokaiWallet = payable(0x8B75687e40646C4A8B01137F33Fac90D2AA7F0c5);
-    
+    address payable public _pokaiWallet =
+        payable(0x8B75687e40646C4A8B01137F33Fac90D2AA7F0c5);
+
     IUniswapV2Router02 private uniswapV2Router;
     address private uniswapV2Pair;
     bool private inSwap = false;
     bool private swapEnabled = true;
-    bool public  pokaiEnabled = false;
 
-    modifier lockTheSwap {
+    modifier lockTheSwap() {
         inSwap = true;
         _;
         inSwap = false;
@@ -178,10 +209,11 @@ contract  Pokai is Context, IERC20, Ownable {
 
     event TaxWalletPaymentRevert(address indexed taxWallet, uint256 amount);
 
+    constructor() {
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
+            0x10ED43C718714eb63d5aA57B78B54704E256024E
+        );
 
-    constructor () {
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
-    
         // Create a uniswap pair for this new token
         uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
             .createPair(address(this), _uniswapV2Router.WETH());
@@ -217,23 +249,43 @@ contract  Pokai is Context, IERC20, Ownable {
         return _balances[account];
     }
 
-    function transfer(address recipient, uint256 amount) public override returns (bool) {
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) public override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
 
-    function allowance(address owner, address spender) public view override returns (uint256) {
+    function allowance(
+        address owner,
+        address spender
+    ) public view override returns (uint256) {
         return _allowances[owner][spender];
     }
 
-    function approve(address spender, uint256 amount) public override returns (bool) {
+    function approve(
+        address spender,
+        uint256 amount
+    ) public override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(
+            sender,
+            _msgSender(),
+            _allowances[sender][_msgSender()].sub(
+                amount,
+                "ERC20: transfer amount exceeds allowance"
+            )
+        );
         return true;
     }
 
@@ -248,53 +300,52 @@ contract  Pokai is Context, IERC20, Ownable {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-        uint256 taxAmount=0;
+        uint256 taxAmount = 0;
         if (!_isExcludedFromFee[from] && !_isExcludedFromFee[to]) {
-
-            require(pokaiEnabled, "Pokai to be enabled");
-
-            if(to != uniswapV2Pair){
-               require(balanceOf(to) + amount <= maxTokensPerWallet, "Cannot exceed pokai max wallet amount");
+            if (_pokaiBuy > 0) {
+                if (from == uniswapV2Pair && to != address(uniswapV2Router)) {
+                    taxAmount = amount.mul(_pokaiBuy).div(100);
+                }
             }
 
-            if(_pokaiBuy > 0) {
-            if (from == uniswapV2Pair && to != address(uniswapV2Router)) {
-                taxAmount = amount.mul(_pokaiBuy).div(100);
-            }
-            }
-
-            if(_pokaiSell > 0) {
-            if(to == uniswapV2Pair){
-                taxAmount = amount.mul(_pokaiSell).div(100);
-            }
+            if (_pokaiSell > 0) {
+                if (to == uniswapV2Pair) {
+                    taxAmount = amount.mul(_pokaiSell).div(100);
+                }
             }
 
             uint256 contractTokenBalance = balanceOf(address(this));
-            if (!inSwap && to == uniswapV2Pair && swapEnabled && contractTokenBalance>_taxSwapThreshold) {
+            if (
+                !inSwap &&
+                to == uniswapV2Pair &&
+                swapEnabled &&
+                contractTokenBalance > _taxSwapThreshold
+            ) {
                 swapTokensForEth(contractTokenBalance);
                 uint256 contractETHBalance = address(this).balance;
-                if(contractETHBalance > 0) {
+                if (contractETHBalance > 0) {
                     sendETHToFee(address(this).balance);
                 }
             }
         }
 
-        if(taxAmount>0){
-          _balances[address(this)]=_balances[address(this)].add(taxAmount);
-          emit Transfer(from, address(this),taxAmount);
+        if (taxAmount > 0) {
+            _balances[address(this)] = _balances[address(this)].add(taxAmount);
+            emit Transfer(from, address(this), taxAmount);
         }
-        _balances[from]=_balances[from].sub(amount);
-        _balances[to]=_balances[to].add(amount.sub(taxAmount));
+        _balances[from] = _balances[from].sub(amount);
+        _balances[to] = _balances[to].add(amount.sub(taxAmount));
         emit Transfer(from, to, amount.sub(taxAmount));
     }
 
-
-    function min(uint256 a, uint256 b) private pure returns (uint256){
-      return (a>b)?b:a;
+    function min(uint256 a, uint256 b) private pure returns (uint256) {
+        return (a > b) ? b : a;
     }
 
     function swapTokensForEth(uint256 tokenAmount) private lockTheSwap {
-        if(tokenAmount==0){return;}
+        if (tokenAmount == 0) {
+            return;
+        }
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = uniswapV2Router.WETH();
@@ -312,47 +363,33 @@ contract  Pokai is Context, IERC20, Ownable {
         (bool callSuccess, ) = payable(_pokaiWallet).call{value: amount}("");
 
         if (!callSuccess) {
-        emit TaxWalletPaymentRevert(_pokaiWallet, amount);
+            emit TaxWalletPaymentRevert(_pokaiWallet, amount);
+        }
     }
-
-    }
-
 
     receive() external payable {}
 
-
-   function manualSwap() external {
-        require(_msgSender()==_pokaiWallet);
-        uint256 tokenBalance=balanceOf(address(this));
-        if(tokenBalance>0){
-          swapTokensForEth(tokenBalance);
+    function manualSwap() external {
+        require(_msgSender() == _pokaiWallet);
+        uint256 tokenBalance = balanceOf(address(this));
+        if (tokenBalance > 0) {
+            swapTokensForEth(tokenBalance);
         }
-        uint256 ethBalance=address(this).balance;
-        if(ethBalance>0){
-          sendETHToFee(ethBalance);
+        uint256 ethBalance = address(this).balance;
+        if (ethBalance > 0) {
+            sendETHToFee(ethBalance);
         }
     }
 
-    function updatePokaiTaxes(uint256 buyFee, uint256 sellFee) public onlyOwner {
+    function updatePokaiTaxes(
+        uint256 buyFee,
+        uint256 sellFee
+    ) public onlyOwner {
+        require(buyFee <= 25, "Buy tax cannot exceed 25%");
+        require(sellFee <= 25, "Sell tax cannot exceed 25%");
         _pokaiBuy = buyFee;
         _pokaiSell = sellFee;
     }
-
-    function enablePokai() public onlyOwner {
-        require(pokaiEnabled != true, "Pokai enabled already");
-        pokaiEnabled = true;
-    }
-
-    function updateTaxSwapThreshold(uint256 _taxLimit) public onlyOwner{
-        require(_taxLimit > 0, "Threshold cannot be 0");
-        _taxSwapThreshold = _taxLimit;
-    }
-
-    function updatePokaiMaxWallet(uint256 _maxLimit) public onlyOwner{
-        require(_maxLimit > totalSupply().div(200),"Limit cannot be too low");
-        maxTokensPerWallet = _maxLimit;
-    }
-
 
     function excludeFromFees(address account) public onlyOwner {
         _isExcludedFromFee[account] = true;
@@ -361,5 +398,4 @@ contract  Pokai is Context, IERC20, Ownable {
     function includeInFees(address account) public onlyOwner {
         _isExcludedFromFee[account] = false;
     }
-    
-    }
+}
