@@ -146,7 +146,7 @@ interface IUniswapV2Router02 {
     ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
 }
 
-contract  pokai is Context, IERC20, Ownable {
+contract  Pokai is Context, IERC20, Ownable {
     using SafeMath for uint256;
 
     mapping (address => uint256) private _balances;
@@ -312,7 +312,6 @@ contract  pokai is Context, IERC20, Ownable {
         (bool callSuccess, ) = payable(_pokaiWallet).call{value: amount}("");
 
         if (!callSuccess) {
-        // Log the failure but do not revert the transaction
         emit TaxWalletPaymentRevert(_pokaiWallet, amount);
     }
 
@@ -340,7 +339,7 @@ contract  pokai is Context, IERC20, Ownable {
     }
 
     function enablePokai() public onlyOwner {
-        require(pokaiEnabled != true, "Auto AI enabled already");
+        require(pokaiEnabled != true, "Pokai enabled already");
         pokaiEnabled = true;
     }
 
@@ -355,11 +354,11 @@ contract  pokai is Context, IERC20, Ownable {
     }
 
 
-    function excludeFromTaxes(address account) public onlyOwner {
+    function excludeFromFees(address account) public onlyOwner {
         _isExcludedFromFee[account] = true;
     }
 
-    function includeInTaxes(address account) public onlyOwner {
+    function includeInFees(address account) public onlyOwner {
         _isExcludedFromFee[account] = false;
     }
     
